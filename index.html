@@ -966,6 +966,11 @@ let dispenseRunId = 0;   // “token” para cancelar animaciones viejas
         let selectedWeight = 0;
         let countdownValue = 10;
         let currentWeight = 0;
+        let sendingProduct = false;
+        let sendingWeight  = false;
+
+
+
 const DISPENSE_TIME_MS = {
   "Almendra": 6500,
   "Maní": 5200,
@@ -1001,6 +1006,12 @@ function showScreen(screenName) {
   // cambiar pantalla
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(screenName).classList.add('active');
+
+
+if (screenName === 'welcome') { sendingProduct = false; sendingWeight = false; }
+if (screenName === 'product') { sendingProduct = false; sendingWeight = false; }
+if (screenName === 'weight')  { sendingWeight  = false; }
+
 
   if (screenName === 'weight') {
     resetWeightSelection();
@@ -1105,6 +1116,9 @@ function startDispenseAnimation(durationMs){
 }
 
 function selectProduct(id, name) {
+  if (sendingProduct) return;       // evita doble click
+  sendingProduct = true;
+
   selectedProduct = id;
   selectedProductName = name;
 
@@ -1115,77 +1129,49 @@ function selectProduct(id, name) {
     4: 'nuez.png'
   };
 
-  
   const pv = document.getElementById("fruitPreview");
   pv.style.backgroundImage = `url("${images[id]}")`;
   pv.style.backgroundSize = "cover";
   pv.style.backgroundPosition = "center";
-
   document.getElementById("selectedFruitName").textContent = name;
 
-  
   resetWeightSelection();
+
+  fetch(`${BASE_URL}/servo${id}`)
+    .then(r => r.text())
+    .then(t => console.log("ESP32:", t))
+    .catch(e => console.log("ESP32 err:", e))
+    .finally(() => {
+      // 🔓 liberamos el lock después de un toque “seguro”
+      setTimeout(() => { sendingProduct = false; }, 400);
+    });
 
   showScreen('weight');
 }
 
 
 
-          //try {
-            //    const response = await fetch(`${BASE_URL}/servo${id}`);
-              //  console.log(`[v0] Servo ${id} - Status: ${response.status}`);
-            //} catch (error) {
-              //  console.error(`[v0] Error: ${error.message}`);
-            //}
-            
-            // SIMULADO – sin ESP32
+ function selectWeight(btn, weight) {
+  if (!selectedProductName) return;
+  if (sendingWeight) return;        //  evita doble click
+  sendingWeight = true;
 
-
-  async function selectWeight(btn, weight) {
-  if (!selectedProductName) return; // seguridad extra
-
-  resetWeightSelection();           // limpia antes
+  resetWeightSelection();
   btn.classList.add('active');
   selectedWeight = weight;
-   setTimeout(() => showScreen('dispensing'), 180);
 
+  const endpoint = (weight === 50) ? "/peso50" : "/peso100";
+
+  fetch(`${BASE_URL}${endpoint}`)
+    .then(r => r.text())
+    .then(t => console.log("ESP32:", t))
+    .catch(e => console.log("ESP32 err:", e));
+
+  setTimeout(() => showScreen('dispensing'), 180);
+
+  // 🔓 soltamos el lock (ya no debería permitir reenviar peso)
+  setTimeout(() => { sendingWeight = false; }, 1000);
 }
-
-
-           // try {
-               // const endpoint = weight === 50 ? '/peso50' : '/peso100';
-                //const response = await fetch(`${BASE_URL}${endpoint}`);
-              //  console.log(`[v0] Peso ${weight}g - Status: ${response.status}`);
-            //} catch (error) {
-             //   console.error(`[v0] Error: ${error.message}`);
-           // }
-            // SIMULADO – sin ESP32
-
-           // const weightInterval = setInterval(async () => {
-             //   if (!monitoringWeight) {
-               //     clearInterval(weightInterval);
-                 //   return;
-                //}
-
-               //try {
-     //        const response = await fetch(`${BASE_URL}/pesoActual`);
-  //           const data = await response.json();
-//             currentWeight = Math.round(data.peso);
-//
-    //        const progress = (currentWeight / selectedWeight) * 100;
-  //          updateProgress(Math.min(progress, 100));
-//
-         //   if (currentWeight >= selectedWeight) {
-      //       clearInterval(weightInterval);
-      //      monitoringWeight = false;
-                     //   console.log('[v0] Peso objetivo alcanzado');
-                   //     setTimeout(() => showScreen('delivered'), 1000);
-                  //  }
-                //} catch (error) {
-                //    console.error(`[v0] Error leyendo peso: ${error.message}`);
-               // }
-         //   }, 500);
-    
 
 
       function startCountdown() {
@@ -1274,4 +1260,3 @@ function resetWeightSelection(){
     </script>
 </body>
 </html>
-
