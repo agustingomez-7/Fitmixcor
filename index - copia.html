@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FITMIX COR - Dispensador Inteligente</title>
+    <style>
+
+
+.logo {
+    width: 260px;
+    display: block;
+    margin: 0 auto 5px;
+     margin-top: 0px;
+}
+
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #FF8C42 0%, #FF6B6B 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+ 
+
+
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .welcome-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .welcome-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+             margin-top: 20px;
+        }
+
+        .welcome-message {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #FF8C42 0%, #FF6B6B 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 40px 0;
+             margin-top: 5px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(135deg, #FF8C42 0%, #FF6B6B 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 5px;
+            
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .product-title {
+            color: #333;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+   .product-btn{
+  height: 180px;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+
+  font-size: 18px;
+  font-weight: 700;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background-size: cover;
+  background-position: center;
+
+
+ box-shadow: inset 0 -10px 20px rgba(0,0,0,0.30);
+text-shadow: 0 2px 8px rgba(0,0,0,0.65);
+
+  
+  transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+}
+
+.product-btn:hover{
+  transform: translateY(-5px);
+  box-shadow: 0 18px 35px rgba(0,0,0,0.18);
+  filter: brightness(1.03);
+}
+
+.product-btn:active{
+  transform: scale(0.95);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.12);
+}
+
+
+.product-btn:active {
+    transform: scale(0.96);
+}
+
+
+
+
+.almendra {
+    background-image: url("almendra.png");
+}
+
+.mani {
+    background-image: url("mani.png");
+}
+
+.castana {
+    background-image: url("castana.png");
+}
+
+.nuez {
+    background-image: url("nuez.png");
+}
+
+
+        .weight-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .dispensing-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 25px;
+            letter-spacing: 2px;
+        }
+
+    
+
+        .success-circle {
+            width: 120px;
+            height: 120px;
+            background: #4CAF50;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            animation: scaleIn 0.5s ease;
+        }
+
+        .checkmark {
+            width: 70px;
+            height: 70px;
+            stroke: white;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+        }
+
+        .completed-title {
+            font-size: 30px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .completed-amount {
+            font-size: 20px;
+            color: #FF6B6B;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .countdown {
+            font-size: 50px;
+            font-weight: bold;
+            color: #FF6B6B;
+            margin: 20px 0;
+            margin-top: 40px;
+            
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+/* === BOTONES 50g / 100g === */
+
+.weight-btn {
+    height: 90px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.25);
+    font-size: 26px;
+    font-weight: 800;
+    cursor: pointer;
+
+    color: #ffffff;
+
+    backdrop-filter: blur(6px);
+    
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        background 0.25s ease;
+}
+
+
+.weight-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 18px 35px rgba(0,0,0,0.28);
+}
+
+.weight-btn:active {
+    transform: scale(0.95);
+}
+
+.weight-btn.active {
+    background: linear-gradient(135deg, #FF8C42, #FF6B6B);
+    color: white;
+    box-shadow: 0 18px 40px rgba(255,108,75,0.45);
+}
+
+
+
+.container {
+
+    position: relative;
+    background-color: white;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    max-width: 400px;
+    width: 100%;
+    padding: 35px;
+    overflow: hidden;
+        min-height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* fondo del fruto */
+.container.with-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: var(--fruit-bg); /* 🔥 ACÁ */
+    background-size: cover;
+    background-position: center;
+    opacity: 1;
+    z-index: 0;
+}
+
+/* todo el contenido arriba del fondo */
+.container > * {
+    position: relative;
+    z-index: 1;
+}
+
+.cantidad {
+  color: #ffffff;        /* blanco */
+  font-weight: 700;
+}
+
+#weight.screen.active {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;;
+}
+
+/* Fondo para el home principal */
+.container.home-bg {
+    background-image: url('tu-fondo.png'); /* reemplaza con el nombre real de tu PNG */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.fruit-preview{
+  margin: 0px 0 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.fruit-image{
+  position: relative;
+  width: 100%;
+  height: 150px;
+  border-radius: 18px;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 0 0 rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+/* nombre centrado dentro del box */
+.fruit-name-overlay{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 22px;
+  font-weight: 900;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+
+  background: linear-gradient(
+    to top,
+    rgba(0,0,0,0.1)
+  );
+}
+
+.quantity-subtitle{
+  text-align: center;
+  font-size: 22px;
+  font-weight: 800;
+  color: #333;
+  margin: 0 0 14px;
+}
+
+
+.weight-grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+
+
+
+#welcomeText {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.slide-out-left {
+  animation: slideOutLeft 0.6s ease forwards;
+}
+
+.slide-in-right {
+  animation: slideInRight 0.6s ease forwards;
+}
+
+@keyframes slideOutLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-40px);
+    opacity: 0;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* =========================
+   VERDE ALEGRE / NATURAL
+   ========================= */
+
+/* Fondo general (afuera del container) */
+body{
+  background: linear-gradient(
+    135deg,
+    #eafff4 0%,   /* verde muy claro */
+    #c7f9cc 100%  /* verde alegre */
+  ) !important;
+}
+
+/* Texto Bienvenido */
+.welcome-message{
+  color: #16a34a !important;   /* verde vivo */
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
+}
+
+/* Botón principal */
+.btn{
+  background: linear-gradient(
+    135deg,
+    #4ade80 0%,   /* verde alegre */
+    #22c55e 100%  /* verde natural */
+  ) !important;
+  box-shadow: 0 10px 25px rgba(34,197,94,0.35);
+}
+
+.btn:hover{
+  filter: brightness(1.06);
+}
+
+
+/* Botones 50g / 100g */
+.weight-btn{
+      position: relative;
+  background: rgba(34,197,94,0.16) !important;
+  border: 1px solid rgba(34,197,94,0.35) !important;
+  color: #14532d !important;
+}
+
+.weight-btn.active{
+  background: linear-gradient(
+    135deg,
+    #4ade80,
+    #22c55e
+  ) !important;
+  color: white !important;
+  box-shadow: 0 14px 32px rgba(34,197,94,0.45) !important;
+}
+
+
+
+
+/* =========================
+   BTN BACK UNIFICADO (IGUAL EN TODAS)
+   ========================= */
+.btn-back{
+  width: 100%;
+  padding: 12px;
+  margin-top: 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+
+  /* mismo look que ya te gusta (verde) */
+  background: rgba(34,197,94,0.18);
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #14532d;
+
+  /* animación igual a los otros botones */
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    filter 0.25s ease;
+}
+
+.btn-back:hover{
+  transform: translateY(-5px);
+  box-shadow: 0 18px 35px rgba(0,0,0,0.18);
+  filter: brightness(1.05);
+}
+
+.btn-back:active{
+  transform: scale(0.95);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.12);
+}
+
+/* === DISPENSING (FIX CENTRADO + ESPACIADO) === */
+#dispensing.screen.active{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+
+  /* en vez de center, lo subimos un toque */
+  justify-content:flex-start;
+
+  min-height:500px;
+  padding-top: 28px;     /* ⬅️ sube “Dispensando” y el círculo */
+  gap: 16px;             /* espacio entre título y círculo */
+}
+
+.dispensing-title{
+  margin-top: 10px;
+  font-size:24px;
+  font-weight:800;
+  animation: bounce 1.2s ease-in-out infinite;
+}
+
+/* círculo más centrado visualmente */
+.progress-circle{
+  position:relative;
+  width:280px;
+  height:280px;
+   margin-top: 10px;
+ 
+}
+
+/* separa el mensaje del círculo */
+.progress-message{
+  margin-top: 22px;      
+  font-size: 16px;
+  font-weight: 600;
+  color: #166534;
+  opacity: 0.85;
+  min-height: 22px;
+  animation: fadeMsg 2.5s ease-in-out infinite;
+}
+
+@keyframes fadeMsg{
+  0%,100%{ opacity: 0.6; }
+  50%{ opacity: 1; }
+}
+/* ===== FIX: PREVIEW FRUTO ===== */
+#fruitPreview{
+  background-repeat: no-repeat !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-color: #eef2f7 !important; 
+}
+.fruit-name-overlay{
+  background: linear-gradient(to top, rgba(0,0,0,0.35), rgba(0,0,0,0.08)) !important;
+}
+
+/* ===== FIX: SELECCIÓN PESO ===== */
+.weight-btn{
+  background: rgba(34,197,94,0.16) !important;
+  border: 1px solid rgba(34,197,94,0.35) !important;
+  color: #14532d !important;
+}
+
+.weight-btn.active{
+  background: linear-gradient(135deg, #4ade80, #22c55e) !important;
+  border-color: rgba(34,197,94,0.60) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 32px rgba(34,197,94,0.45) !important;
+  transform: translateY(-2px);
+}
+ .weight-btn.active{
+  background: linear-gradient(135deg, #4ade80, #22c55e) !important;
+  color: #fff !important;
+  border-color: rgba(34,197,94,0.60) !important;
+}
+
+/* ===== FIX DEFINITIVO: BOTÓN PESO SELECCIONADO ===== */
+.weight-btn{
+  background: rgba(34,197,94,0.16) !important;
+  border: 2px solid rgba(34,197,94,0.45) !important;
+  color: #14532d !important;
+}
+
+.weight-btn.active{
+  background: linear-gradient(135deg, #4ade80, #22c55e) !important;
+  border: 2px solid rgba(34,197,94,0.85) !important;
+  color: #ffffff !important;
+  box-shadow: 0 18px 40px rgba(34,197,94,0.55) !important;
+  transform: translateY(-3px) scale(1.02) !important;
+}
+
+
+.weight-btn.active::after{
+  content:"";
+  position:absolute;
+  inset:-4px;
+  border-radius:24px;
+  border:2px solid rgba(255,255,255,0.75);
+  pointer-events:none;
+}
+
+
+/* ===== BTN BACK – feedback al tocar ===== */
+.btn-back{
+  position: relative;
+}
+
+.btn-back:active{
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  color: #ffffff;
+  border-color: rgba(34,197,94,0.85);
+  box-shadow: 0 14px 32px rgba(34,197,94,0.45);
+  transform: scale(0.96);
+}
+
+/* aro visual igual que peso seleccionado */
+.btn-back:active::after{
+  content:"";
+  position:absolute;
+  inset:-4px;
+  border-radius:16px;
+  border:2px solid rgba(255,255,255,0.75);
+  pointer-events:none;
+}
+
+/* ===== SUCCESS FLASH (1.2s) ===== */
+#successFlash.screen.active{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  min-height:500px;
+  background: linear-gradient(135deg, #eafff4 0%, #c7f9cc 100%);
+  border-radius: 24px;
+}
+
+.success-circle.flash{
+  width: 170px;
+  height: 170px;
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+  box-shadow: 0 18px 40px rgba(34,197,94,0.35);
+  animation: pop 0.55s ease both;
+}
+
+.flash-title{
+  font-size: 36px;
+  font-weight: 900;
+  color: #14532d;
+}
+
+.flash-sub{
+  font-size: 16px;
+  font-weight: 700;
+  color: #166534;
+  opacity: 0.85;
+}
+
+@keyframes pop{
+  0%{ transform: scale(0.6); opacity:0; }
+  60%{ transform: scale(1.06); opacity:1; }
+  100%{ transform: scale(1); }
+}
+
+
+#delivered.screen.active{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  min-height:500px;
+
+  /* CONTROL REAL DE ESPACIOS */
+  justify-content:flex-start;
+  gap: 18px;
+}
+
+
+.delivered{
+  text-align:center;
+}
+
+.delivered-top{
+  margin-top: 10px;
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+
+.delivered .completed-title{
+  margin: 0;
+  font-size: 30px;
+  font-weight: 900;
+  color:#0f172a;
+  letter-spacing:-0.2px;
+}
+
+.delivered-card{
+  border-radius: 18px;
+  margin-top: 18px;
+  padding: 16px 16px;
+  background: rgba(34,197,94,0.10);
+  border: 1px solid rgba(34,197,94,0.28);
+  box-shadow: 0 12px 26px rgba(0,0,0,0.06);
+  text-align:left;
+}
+
+.delivered-row{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  padding: 10px 0;
+}
+
+.delivered-row + .delivered-row{
+  border-top: 1px solid rgba(34,197,94,0.18);
+}
+
+.delivered-label{
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(22,101,52,0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.delivered-value{
+  font-size: 22px;
+  font-weight: 900;
+  color: #14532d;
+}
+
+.delivered-cta{
+  margin: 22px 0 12px;
+}
+
+.delivered-bottom{
+  margin-top: 10px;   
+  align-items: center;
+  gap: 6px;
+}
+
+
+.back-msg{
+  font-size: 16px;
+  font-weight: 800;
+  color: rgba(22,101,52,0.75);
+  margin-bottom: 6px;  
+}
+
+#delivered .countdown{
+  margin: 0; 
+  margin-top: 10px;
+  font-size: 56px;
+  font-weight: 900;
+  color: #16a34a;
+  margin-bottom: 8px; 
+  line-height: 1;
+}
+
+.delivered-bottom{
+  margin-top: 25px !important;
+  order: 2;
+}
+
+.delivered-cta{
+  margin-top: 60px;
+  margin-bottom: 10px;
+}
+
+
+.delivered-bottom .countdown{
+  font-size: 64px !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+   margin-top: 20px;
+}
+
+.delivered-bottom .back-msg{
+  margin-top: 12px;
+}
+
+/* ===== FIX DEFINITIVO: % CENTRADO + MENSAJE SEPARADO ===== */
+
+.progress-text{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 !important;     /* ✅ evita que el % se desplace */
+}
+
+.progress-percent{
+  font-size:64px;           /* ✅ grande como antes */
+  font-weight:900;
+  line-height:1;
+  color:#16a34a;
+}
+
+/* ✅ separación real entre círculo y mensaje */
+.progress-message{
+  margin-top: 30px !important;  
+  position: static !important;  
+}
+
+
+    </style>
+</head>
+<body>
+
+
+    <div class="container">
+        <div id="welcome" class="screen active text-center">
+         <img src="logo.png" class="logo">
+
+            <div class="welcome-subtitle">Dispensador inteligente</div>
+           <div class="welcome-message" id="welcomeText">Bienvenido</div>
+
+            <button class="btn" onclick="showScreen('product')">Comenzar</button>
+        </div>
+
+        <div id="product" class="screen">
+            <h1 class="product-title">Selecciona tu fruto favorito</h1>
+            <div class="product-grid">
+                <button class="product-btn almendra" onclick="setTimeout(() => selectProduct(1, 'Almendra'), 120)">Almendra</button>
+                <button class="product-btn mani" onclick="setTimeout(() => selectProduct(2, 'Maní'),120)">Maní</button>
+                <button class="product-btn castana" onclick="setTimeout(() => selectProduct(3, 'Castaña'),120)">Castaña</button>
+                <button class="product-btn nuez" onclick="setTimeout(() => selectProduct(4, 'Nuez'),120)">Nuez</button>
+            </div>
+            <button class="btn-back" onclick="showScreen('welcome')">Atrás</button>
+        </div>
+
+      <div id="weight" class="screen">
+  <h1 class="product-title">Fruto elegido</h1>
+
+  <div class="fruit-preview">
+  <div class="fruit-image" id="fruitPreview">
+    <div class="fruit-name-overlay" id="selectedFruitName">—</div>
+  </div>
+</div>
+
+  <h2 class="quantity-subtitle">Cantidad</h2>
+
+  <div class="weight-grid">
+    <button class="weight-btn" onclick="selectWeight(this, 50)">50 g</button>
+    <button class="weight-btn" onclick="selectWeight(this, 100)">100 g</button>
+  </div>
+
+  <button class="btn-back" onclick="showScreen('product')">Atrás</button>
+</div>
+<div id="dispensing" class="screen text-center">
+  <div class="dispensing-title">Dispensando</div>
+
+  <div class="progress-circle">
+    <svg viewBox="0 0 200 200">
+      <defs>
+        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#4ade80"/>
+          <stop offset="100%" stop-color="#22c55e"/>
+        </linearGradient>
+      </defs>
+
+      <circle cx="100" cy="100" r="86"
+              fill="none"
+              stroke="#eaeaea"
+              stroke-width="14"/>
+
+      <circle id="progressCircle"
+              cx="100" cy="100" r="86"
+              fill="none"
+              stroke="url(#gradient)"
+              stroke-width="14"
+              stroke-linecap="round"
+              stroke-dasharray="540.35"
+              stroke-dashoffset="540.35"/>
+    </svg>
+
+    <div class="progress-text">
+      <div class="progress-percent" id="progressPercent">0%</div>
+    </div>
+    
+<div class="progress-message" id="progressMessage">
+  Preparando…
+</div>
+  </div>
+</div>
+
+<!-- PANTALLA FLASH: entrega lista -->
+<div id="successFlash" class="screen text-center">
+  <div class="success-circle flash">
+    <svg viewBox="0 0 24 24" class="checkmark">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  </div>
+  <div class="flash-title">¡Mix entregado!</div>
+    <div class="flash-sub">Gracias por elegirnos</div>
+
+</div>
+
+<div id="delivered" class="screen delivered">
+  <div class="delivered-top">
+    <div class="completed-title">Entrega completada</div>
+
+    <div class="delivered-card">
+      <div class="delivered-row">
+        <div class="delivered-label">Cantidad</div>
+        <div class="delivered-value"><span id="deliveredAmount">0</span> g</div>
+      </div>
+      <div class="delivered-row">
+        <div class="delivered-label">Producto</div>
+        <div class="delivered-value" id="deliveredProduct"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="delivered-bottom">
+    <div class="back-msg">Volviendo al inicio en...</div>
+    <div class="countdown" id="countdown">10</div>
+
+    <button class="btn delivered-cta" onclick="anotherPurchase()">
+      Realizar otra compra
+    </button>
+  </div>
+</div>
+
+
+     
+
+
+
+ 
+    <script>
+        let countdownInterval = null;
+let dispenseRunId = 0;   // “token” para cancelar animaciones viejas
+
+        let deliveredWeight = 0;
+        let deliveredProduct = '';
+        let progressRAF = null;
+        let selectedProduct = 0;
+        let selectedProductName = '';
+        let selectedWeight = 0;
+        let countdownValue = 10;
+        let currentWeight = 0;
+const DISPENSE_TIME_MS = {
+  "Almendra": 6500,
+  "Maní": 5200,
+  "Castaña": 7200,
+  "Nuez": 8000
+};
+
+        const ARDUINO_IP = "192.168.100.163";
+        const BASE_URL = `http://${ARDUINO_IP}`;
+
+        function activateScreen(screenName){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenName).classList.add('active');
+}
+
+
+function showScreen(screenName) {
+
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+
+
+  dispenseRunId++;
+
+  
+  if (progressRAF) {
+    cancelAnimationFrame(progressRAF);
+    progressRAF = null;
+  }
+
+  // cambiar pantalla
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenName).classList.add('active');
+
+  if (screenName === 'weight') {
+    resetWeightSelection();
+  }
+
+  if (screenName === 'dispensing') {
+    const ms = DISPENSE_TIME_MS[selectedProductName] ?? 7000;
+    startDispenseAnimation(ms);
+  }
+
+  if (screenName === 'delivered') {
+    startCountdown();
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function startDispenseAnimation(durationMs){
+  const myRun = dispenseRunId; // token actual (si cambia, se cancela)
+
+  const circle   = document.getElementById('progressCircle');
+  const percentEl= document.getElementById('progressPercent');
+  const msgEl    = document.getElementById('progressMessage');
+
+  const C = 540.35;
+  const start = performance.now();
+
+  // reset visual SIEMPRE
+  circle.style.strokeDashoffset = C;
+  percentEl.textContent = '0%';
+
+  const messages = [
+    `Preparando mix de ${selectedProductName}…`,
+    `Liberando frutos…`,
+    `Pesando mix…`,
+    `Controlando peso…`,
+    `Mix casi listo…`
+  ];
+
+  let msgIndex = 0;
+  msgEl.textContent = messages[0];
+
+  const msgInterval = setInterval(() => {
+    // si se canceló la corrida, cortar interval
+    if (myRun !== dispenseRunId) {
+      clearInterval(msgInterval);
+      return;
+    }
+    msgIndex = (msgIndex + 1) % messages.length;
+    msgEl.textContent = messages[msgIndex];
+  }, 1500);
+
+  function frame(now){
+    // si se canceló la corrida, corto TODO
+    if (myRun !== dispenseRunId) {
+      clearInterval(msgInterval);
+      return;
+    }
+
+    const t = Math.min(1, (now - start) / durationMs);
+    const real = t * 100;
+
+    circle.style.strokeDashoffset = C - (real/100) * C;
+    percentEl.textContent = `${Math.floor(real)}%`; 
+
+    if (t < 1) {
+      progressRAF = requestAnimationFrame(frame);
+    } else {
+      clearInterval(msgInterval);
+      msgEl.textContent = 'Finalizando…';
+
+      deliveredWeight = selectedWeight;
+      deliveredProduct = selectedProductName;
+
+      setTimeout(() => {
+  if (myRun !== dispenseRunId) return;
+
+  activateScreen('successFlash'); 
+
+
+  setTimeout(() => {             
+    if (myRun !== dispenseRunId) return;
+    showScreen('delivered');
+  }, 2000);
+
+}, 200);
+
+    }
+  }
+
+  progressRAF = requestAnimationFrame(frame);
+}
+
+function selectProduct(id, name) {
+  selectedProduct = id;
+  selectedProductName = name;
+
+  const images = {
+    1: 'almendra.png',
+    2: 'mani.png',
+    3: 'castana.png',
+    4: 'nuez.png'
+  };
+
+  
+  const pv = document.getElementById("fruitPreview");
+  pv.style.backgroundImage = `url("${images[id]}")`;
+  pv.style.backgroundSize = "cover";
+  pv.style.backgroundPosition = "center";
+
+  document.getElementById("selectedFruitName").textContent = name;
+
+  
+  resetWeightSelection();
+
+  showScreen('weight');
+}
+
+
+
+          //try {
+            //    const response = await fetch(`${BASE_URL}/servo${id}`);
+              //  console.log(`[v0] Servo ${id} - Status: ${response.status}`);
+            //} catch (error) {
+              //  console.error(`[v0] Error: ${error.message}`);
+            //}
+            
+            // SIMULADO – sin ESP32
+
+
+  async function selectWeight(btn, weight) {
+  if (!selectedProductName) return; // seguridad extra
+
+  resetWeightSelection();           // limpia antes
+  btn.classList.add('active');
+  selectedWeight = weight;
+   setTimeout(() => showScreen('dispensing'), 180);
+
+}
+
+
+           // try {
+               // const endpoint = weight === 50 ? '/peso50' : '/peso100';
+                //const response = await fetch(`${BASE_URL}${endpoint}`);
+              //  console.log(`[v0] Peso ${weight}g - Status: ${response.status}`);
+            //} catch (error) {
+             //   console.error(`[v0] Error: ${error.message}`);
+           // }
+            // SIMULADO – sin ESP32
+
+           // const weightInterval = setInterval(async () => {
+             //   if (!monitoringWeight) {
+               //     clearInterval(weightInterval);
+                 //   return;
+                //}
+
+               //try {
+     //        const response = await fetch(`${BASE_URL}/pesoActual`);
+  //           const data = await response.json();
+//             currentWeight = Math.round(data.peso);
+//
+    //        const progress = (currentWeight / selectedWeight) * 100;
+  //          updateProgress(Math.min(progress, 100));
+//
+         //   if (currentWeight >= selectedWeight) {
+      //       clearInterval(weightInterval);
+      //      monitoringWeight = false;
+                     //   console.log('[v0] Peso objetivo alcanzado');
+                   //     setTimeout(() => showScreen('delivered'), 1000);
+                  //  }
+                //} catch (error) {
+                //    console.error(`[v0] Error leyendo peso: ${error.message}`);
+               // }
+         //   }, 500);
+    
+
+
+      function startCountdown() {
+  // si por alguna razón había uno, lo corto
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+
+  countdownValue = 10;
+  document.getElementById('countdown').textContent = countdownValue;
+
+  // usar los “congelados” (o al menos los actuales)
+  document.getElementById('deliveredAmount').textContent = deliveredWeight || selectedWeight || 0;
+  document.getElementById('deliveredProduct').textContent = deliveredProduct || selectedProductName || '';
+
+  countdownInterval = setInterval(() => {
+    countdownValue--;
+    document.getElementById('countdown').textContent = countdownValue;
+
+    if (countdownValue <= 0) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+
+      showScreen('welcome');
+      selectedProduct = 0;
+      selectedProductName = '';
+      selectedWeight = 0;
+      currentWeight = 0;
+    }
+  }, 1000);
+}
+
+function anotherPurchase() {
+  selectedProduct = 0;
+  selectedProductName = '';
+  selectedWeight = 0;
+
+  deliveredWeight = 0;
+  deliveredProduct = '';
+
+  resetWeightSelection();
+  showScreen('product');
+}
+
+const welcomeTexts = [
+  "Bienvenido",
+  "Welcome",
+  "Bienvenue",
+  "Benvenuto",
+   "欢迎",
+  "Willkommen",
+  "Bem-vindo"
+];
+
+let welcomeIndex = 0;
+const welcomeEl = document.getElementById("welcomeText");
+
+setInterval(() => {
+  // sale hacia la izquierda
+  welcomeEl.classList.remove("slide-in-right");
+  welcomeEl.classList.add("slide-out-left");
+
+  setTimeout(() => {
+    // cambia texto
+    welcomeIndex = (welcomeIndex + 1) % welcomeTexts.length;
+    welcomeEl.textContent = welcomeTexts[welcomeIndex];
+
+    // entra desde la derecha
+    welcomeEl.classList.remove("slide-out-left");
+    welcomeEl.classList.add("slide-in-right");
+  }, 600);
+
+}, 2500); // tiempo total entre cambios
+
+function resetWeightSelection(){
+  selectedWeight = 0;
+  document
+    .querySelectorAll('.weight-btn')
+    .forEach(b => b.classList.remove('active'));
+}
+
+
+
+
+    </script>
+</body>
+</html>
