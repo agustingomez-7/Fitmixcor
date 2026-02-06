@@ -969,6 +969,24 @@ let dispenseRunId = 0;   // “token” para cancelar animaciones viejas
         let sendingWeight  = false;
         let statusInterval = null;
 
+        // ===== Rotación de mensajes abajo del círculo =====
+let msgInterval = null;
+let msgIndex = 0;
+
+const progressMsgs = [
+  "Liberando frutos…",
+  "Pesando mix…",
+  "Peso ok…",
+  "Casi listo…",
+  "Preparando entrega…",
+  "Entregando…"
+];
+
+// ===== Fake progress (animación del %) =====
+let fakeRAF = null;
+let fakeStartMs = 0;
+let fakeProgress = 0;
+
 
         const ARDUINO_IP = "192.168.100.184";
         const BASE_URL = `http://${ARDUINO_IP}`;
@@ -981,52 +999,55 @@ let dispenseRunId = 0;   // “token” para cancelar animaciones viejas
 
 function showScreen(screenName) {
 
+  // cortar countdown si existía
   if (countdownInterval) {
     clearInterval(countdownInterval);
     countdownInterval = null;
   }
 
-
+  // token para cortar procesos anteriores
   dispenseRunId++;
 
   // cambiar pantalla
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(screenName).classList.add('active');
 
+  // reset locks
+  if (screenName === 'welcome') { sendingProduct = false; sendingWeight = false; }
+  if (screenName === 'product') { sendingProduct = false; sendingWeight = false; }
+  if (screenName === 'weight')  { sendingWeight  = false; }
 
-if (screenName === 'welcome') { sendingProduct = false; sendingWeight = false; }
-if (screenName === 'product') { sendingProduct = false; sendingWeight = false; }
-if (screenName === 'weight')  { sendingWeight  = false; }
-
-
+  // si entro a weight, reseteo selección
   if (screenName === 'weight') {
     resetWeightSelection();
   }
 
- if (screenName === 'dispensing') {
-  resetDispenseUI();          // ✅ limpia instantáneo
-  startDispenseMonitoring();  // ✅ arranca el polling
-}
+  // si entro a dispensing: arranco fake %, mensajes y monitoreo FDC2
+  if (screenName === 'dispensing') {
+    resetFakeProgress();
 
+    const dur = (selectedWeight === 50) ? 9000 : 16000;
+    startFakeProgress(dur);
 
+    startMsgRotation();
+    startDispenseMonitoring();
+  }
+
+  // si entro a delivered: arranco countdown
   if (screenName === 'delivered') {
     startCountdown();
   }
 
-if (screenName !== 'dispensing' && statusInterval) {
-  clearInterval(statusInterval);
-  statusInterval = null;
+  // si salgo de dispensing: corto timers
+  if (screenName !== 'dispensing') {
+    if (statusInterval) {
+      clearInterval(statusInterval);
+      statusInterval = null;
+    }
+    stopFakeProgress();
+    stopMsgRotation();
+  }
 }
-
-
-}
-
-
-
-
-
-
-
 
 
 
@@ -1132,9 +1153,10 @@ function anotherPurchase() {
   deliveredWeight = 0;
   deliveredProduct = '';
 
-  resetWeightSelection();
-    resetDispenseUI(); 
-  showScreen('product');
+ resetWeightSelection();
+resetFakeProgress();
+showScreen('product');
+
 }
 
 const welcomeTexts = [
@@ -1176,69 +1198,6 @@ function resetWeightSelection(){
 
 
 
-
-let displayedProgress = 0;   // lo que se ve
-let targetProgress = 0;      // lo que llega del ESP32
-let animRAF = null;
-
-function resetDispenseUI(){
-  const circle    = document.getElementById('progressCircle');
-  const percentEl = document.getElementById('progressPercent');
-  const msgEl     = document.getElementById('progressMessage');
-
-  const C = 540.35;
-
-  if (animRAF) {
-    cancelAnimationFrame(animRAF);
-    animRAF = null;
-  }
-
-  displayedProgress = 0;
-  targetProgress = 0;
-
-  targetProgress = progress;   // ✅ target real (0-100)
-startSmoothProgress();       // ✅ anima suave hacia ese target
-  msgEl.textContent = 'Preparando…';
-}
-
-function startSmoothProgress(){
-  const circle    = document.getElementById('progressCircle');
-  const percentEl = document.getElementById('progressPercent');
-  const C = 540.35;
-
-  if (animRAF) return;
-
-  const step = () => {
-    const diff = targetProgress - displayedProgress;
-    displayedProgress += diff * 0.18; // suavidad
-
-    if (Math.abs(diff) < 0.3) displayedProgress = targetProgress;
-
-    const p = Math.max(0, Math.min(100, displayedProgress));
-    circle.style.strokeDashoffset = C - (p/100) * C;
-    percentEl.textContent = `${Math.floor(p)}%`;
-
-    if (displayedProgress !== targetProgress) {
-      animRAF = requestAnimationFrame(step);
-    } else {
-      animRAF = null;
-    }
-  };
-
-  animRAF = requestAnimationFrame(step);
-}
-
-
-
-
-
-
-
-
-
-
-
-
 function startDispenseMonitoring(){
   const myRun = dispenseRunId;
 
@@ -1265,26 +1224,7 @@ function startDispenseMonitoring(){
     try {
       const r = await fetch(`${BASE_URL}/status`, { cache: "no-store" });
       const s = await r.json();
-
-      // Mensaje según estado real del ESP32
-      if (s.estado === "dispensing") msgEl.textContent = "Liberando frutos…";
-      else if (s.estado === "weighing") msgEl.textContent = "Pesando mix…";
-      else if (s.estado === "complete") msgEl.textContent = "Peso OK… preparando entrega…";
-      else if (s.estado === "delivering") msgEl.textContent = "Entregando…";
-      else msgEl.textContent = "Procesando…";
-
-      // Progreso real (por ciclos)
-      const ciclosTot = Number(s.ciclosTot || 0);
-      const ciclosOk  = Number(s.ciclosOk  || 0);
-
-      let progress = 0;
-      if (ciclosTot > 0) progress = (ciclosOk / ciclosTot) * 100;
-
-      // dibujar % (clamp 0-100)
-      progress = Math.max(0, Math.min(100, progress));
-      circle.style.strokeDashoffset = C - (progress/100) * C;
-      percentEl.textContent = `${Math.floor(progress)}%`;
-
+    
       // Congelar datos entregados (para pantalla final)
       deliveredWeight = selectedWeight;
       deliveredProduct = selectedProductName;
@@ -1292,21 +1232,21 @@ function startDispenseMonitoring(){
       // === CONDICIÓN DE FIN (como pediste) ===
       // Mostrar “Mix entregado” cuando toca FDC2:
       if (s.fdc2 === true) {
-        clearInterval(statusInterval);
-        statusInterval = null;
+  clearInterval(statusInterval);
+  statusInterval = null;
 
-        // pantalla flash y luego delivered
-        activateScreen('successFlash');
-        setTimeout(() => {
-          if (myRun !== dispenseRunId) return;
-          showScreen('delivered');
-        }, 2000);
-        return;
-      }
+  // clavar 100% real y círculo completo
+  finishFakeProgress();
+  stopMsgRotation();  
 
-      // Si preferís “entrega completada real” al volver (estado delivered), usar esto en vez de fdc2:
-      // if (s.estado === "delivered") { ... }
-      
+  activateScreen('successFlash');
+  setTimeout(() => {
+    if (myRun !== dispenseRunId) return;
+    showScreen('delivered');
+  }, 2000);
+  return;
+}
+
     } catch (e) {
       msgEl.textContent = "Sin conexión con ESP32…";
     }
@@ -1317,7 +1257,88 @@ function startDispenseMonitoring(){
 
   statusInterval = setInterval(tick, 350);
 }
+function resetFakeProgress(){
+  fakeProgress = 0;
 
+  const circle = document.getElementById('progressCircle');
+  const percentEl = document.getElementById('progressPercent');
+  const msgEl = document.getElementById('progressMessage');
+  const C = 540.35;
+
+  if (circle) circle.style.strokeDashoffset = C;
+  if (percentEl) percentEl.textContent = '0%';
+  if (msgEl) msgEl.textContent = 'Preparando…';
+}
+
+function stopFakeProgress(){
+  if (fakeRAF) {
+    cancelAnimationFrame(fakeRAF);
+    fakeRAF = null;
+  }
+}
+
+function finishFakeProgress(){
+  stopFakeProgress();
+  fakeProgress = 100;
+
+  const circle = document.getElementById('progressCircle');
+  const percentEl = document.getElementById('progressPercent');
+  const C = 540.35;
+
+  if (circle) circle.style.strokeDashoffset = 0;
+  if (percentEl) percentEl.textContent = '100%';
+}
+
+function startFakeProgress(durationMs){
+  stopFakeProgress();
+  fakeStartMs = performance.now();
+
+  const circle = document.getElementById('progressCircle');
+  const percentEl = document.getElementById('progressPercent');
+  const C = 540.35;
+
+  function frame(now){
+    const elapsed = now - fakeStartMs;
+    const t = Math.min(1, elapsed / durationMs); // 0..1
+
+    // sube rápido al inicio y se frena cerca del final (no llega a 100)
+    let p = 97 * (1 - Math.exp(-4 * t));
+
+    // mini variación para que se vea “vivo”
+    p += Math.sin(elapsed / 350) * 0.6;
+
+    p = Math.max(0, Math.min(97, p));
+    fakeProgress = p;
+
+    if (circle) circle.style.strokeDashoffset = C - (p/100) * C;
+    if (percentEl) percentEl.textContent = `${Math.floor(p)}%`;
+
+    fakeRAF = requestAnimationFrame(frame);
+  }
+
+  fakeRAF = requestAnimationFrame(frame);
+}
+
+function startMsgRotation(){
+  stopMsgRotation();
+
+  const msgEl = document.getElementById('progressMessage');
+  msgIndex = 0;
+
+  if (msgEl) msgEl.textContent = progressMsgs[msgIndex];
+
+  msgInterval = setInterval(() => {
+    msgIndex = (msgIndex + 1) % progressMsgs.length;
+    if (msgEl) msgEl.textContent = progressMsgs[msgIndex];
+  }, 1400); // <-- cada 1.4s cambia (ajustable)
+}
+
+function stopMsgRotation(){
+  if (msgInterval) {
+    clearInterval(msgInterval);
+    msgInterval = null;
+  }
+}
 
 
 
