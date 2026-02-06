@@ -960,7 +960,6 @@ let dispenseRunId = 0;   // “token” para cancelar animaciones viejas
 
         let deliveredWeight = 0;
         let deliveredProduct = '';
-        let progressRAF = null;
         let selectedProduct = 0;
         let selectedProductName = '';
         let selectedWeight = 0;
@@ -968,15 +967,8 @@ let dispenseRunId = 0;   // “token” para cancelar animaciones viejas
         let currentWeight = 0;
         let sendingProduct = false;
         let sendingWeight  = false;
+        let statusInterval = null;
 
-
-
-const DISPENSE_TIME_MS = {
-  "Almendra": 6500,
-  "Maní": 5200,
-  "Castaña": 7200,
-  "Nuez": 8000
-};
 
         const ARDUINO_IP = "192.168.100.184";
         const BASE_URL = `http://${ARDUINO_IP}`;
@@ -997,12 +989,6 @@ function showScreen(screenName) {
 
   dispenseRunId++;
 
-  
-  if (progressRAF) {
-    cancelAnimationFrame(progressRAF);
-    progressRAF = null;
-  }
-
   // cambiar pantalla
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(screenName).classList.add('active');
@@ -1018,13 +1004,19 @@ if (screenName === 'weight')  { sendingWeight  = false; }
   }
 
   if (screenName === 'dispensing') {
-    const ms = DISPENSE_TIME_MS[selectedProductName] ?? 7000;
-    startDispenseAnimation(ms);
+   startDispenseMonitoring();   // <- nuevo
   }
 
   if (screenName === 'delivered') {
     startCountdown();
   }
+
+if (screenName !== 'dispensing' && statusInterval) {
+  clearInterval(statusInterval);
+  statusInterval = null;
+}
+
+
 }
 
 
@@ -1039,81 +1031,6 @@ if (screenName === 'weight')  { sendingWeight  = false; }
 
 
 
-function startDispenseAnimation(durationMs){
-  const myRun = dispenseRunId; // token actual (si cambia, se cancela)
-
-  const circle   = document.getElementById('progressCircle');
-  const percentEl= document.getElementById('progressPercent');
-  const msgEl    = document.getElementById('progressMessage');
-
-  const C = 540.35;
-  const start = performance.now();
-
-  // reset visual SIEMPRE
-  circle.style.strokeDashoffset = C;
-  percentEl.textContent = '0%';
-
-  const messages = [
-    `Preparando mix de ${selectedProductName}…`,
-    `Liberando frutos…`,
-    `Pesando mix…`,
-    `Controlando peso…`,
-    `Mix casi listo…`
-  ];
-
-  let msgIndex = 0;
-  msgEl.textContent = messages[0];
-
-  const msgInterval = setInterval(() => {
-    // si se canceló la corrida, cortar interval
-    if (myRun !== dispenseRunId) {
-      clearInterval(msgInterval);
-      return;
-    }
-    msgIndex = (msgIndex + 1) % messages.length;
-    msgEl.textContent = messages[msgIndex];
-  }, 1500);
-
-  function frame(now){
-    // si se canceló la corrida, corto TODO
-    if (myRun !== dispenseRunId) {
-      clearInterval(msgInterval);
-      return;
-    }
-
-    const t = Math.min(1, (now - start) / durationMs);
-    const real = t * 100;
-
-    circle.style.strokeDashoffset = C - (real/100) * C;
-    percentEl.textContent = `${Math.floor(real)}%`; 
-
-    if (t < 1) {
-      progressRAF = requestAnimationFrame(frame);
-    } else {
-      clearInterval(msgInterval);
-      msgEl.textContent = 'Finalizando…';
-
-      deliveredWeight = selectedWeight;
-      deliveredProduct = selectedProductName;
-
-      setTimeout(() => {
-  if (myRun !== dispenseRunId) return;
-
-  activateScreen('successFlash'); 
-
-
-  setTimeout(() => {             
-    if (myRun !== dispenseRunId) return;
-    showScreen('delivered');
-  }, 2000);
-
-}, 200);
-
-    }
-  }
-
-  progressRAF = requestAnimationFrame(frame);
-}
 
 function selectProduct(id, name) {
   if (sendingProduct) return;       // evita doble click
@@ -1169,7 +1086,7 @@ function selectProduct(id, name) {
 
   setTimeout(() => showScreen('dispensing'), 180);
 
-  // 🔓 soltamos el lock (ya no debería permitir reenviar peso)
+  
   setTimeout(() => { sendingWeight = false; }, 1000);
 }
 
@@ -1252,6 +1169,84 @@ function resetWeightSelection(){
   document
     .querySelectorAll('.weight-btn')
     .forEach(b => b.classList.remove('active'));
+}
+function startDispenseMonitoring(){
+  const myRun = dispenseRunId;
+
+  const circle    = document.getElementById('progressCircle');
+  const percentEl = document.getElementById('progressPercent');
+  const msgEl     = document.getElementById('progressMessage');
+
+  const C = 540.35;
+
+  // reset UI
+  circle.style.strokeDashoffset = C;
+  percentEl.textContent = '0%';
+  msgEl.textContent = 'Preparando…';
+
+  // si había uno viejo, lo corto
+  if (statusInterval) {
+    clearInterval(statusInterval);
+    statusInterval = null;
+  }
+
+  async function tick(){
+    if (myRun !== dispenseRunId) return;
+
+    try {
+      const r = await fetch(`${BASE_URL}/status`, { cache: "no-store" });
+      const s = await r.json();
+
+      // Mensaje según estado real del ESP32
+      if (s.estado === "dispensing") msgEl.textContent = "Liberando frutos…";
+      else if (s.estado === "weighing") msgEl.textContent = "Pesando mix…";
+      else if (s.estado === "complete") msgEl.textContent = "Peso OK… preparando entrega…";
+      else if (s.estado === "delivering") msgEl.textContent = "Entregando…";
+      else msgEl.textContent = "Procesando…";
+
+      // Progreso real (por ciclos)
+      const ciclosTot = Number(s.ciclosTot || 0);
+      const ciclosOk  = Number(s.ciclosOk  || 0);
+
+      let progress = 0;
+      if (ciclosTot > 0) progress = (ciclosOk / ciclosTot) * 100;
+
+      // dibujar % (clamp 0-100)
+      progress = Math.max(0, Math.min(100, progress));
+      circle.style.strokeDashoffset = C - (progress/100) * C;
+      percentEl.textContent = `${Math.floor(progress)}%`;
+
+      // Congelar datos entregados (para pantalla final)
+      deliveredWeight = selectedWeight;
+      deliveredProduct = selectedProductName;
+
+      // === CONDICIÓN DE FIN (como pediste) ===
+      // Mostrar “Mix entregado” cuando toca FDC2:
+      if (s.fdc2 === true) {
+        clearInterval(statusInterval);
+        statusInterval = null;
+
+        // pantalla flash y luego delivered
+        activateScreen('successFlash');
+        setTimeout(() => {
+          if (myRun !== dispenseRunId) return;
+          showScreen('delivered');
+        }, 2000);
+        return;
+      }
+
+      // Si preferís “entrega completada real” al volver (estado delivered), usar esto en vez de fdc2:
+      // if (s.estado === "delivered") { ... }
+      
+    } catch (e) {
+      msgEl.textContent = "Sin conexión con ESP32…";
+    }
+  }
+
+  // primer tick inmediato
+  tick();
+
+  statusInterval = setInterval(tick, 350);
 }
 
 
