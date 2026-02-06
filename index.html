@@ -1003,9 +1003,11 @@ if (screenName === 'weight')  { sendingWeight  = false; }
     resetWeightSelection();
   }
 
-  if (screenName === 'dispensing') {
-   startDispenseMonitoring();   // <- nuevo
-  }
+ if (screenName === 'dispensing') {
+  resetDispenseUI();          // ✅ limpia instantáneo
+  startDispenseMonitoring();  // ✅ arranca el polling
+}
+
 
   if (screenName === 'delivered') {
     startCountdown();
@@ -1131,6 +1133,7 @@ function anotherPurchase() {
   deliveredProduct = '';
 
   resetWeightSelection();
+    resetDispenseUI(); 
   showScreen('product');
 }
 
@@ -1170,6 +1173,72 @@ function resetWeightSelection(){
     .querySelectorAll('.weight-btn')
     .forEach(b => b.classList.remove('active'));
 }
+
+
+
+
+let displayedProgress = 0;   // lo que se ve
+let targetProgress = 0;      // lo que llega del ESP32
+let animRAF = null;
+
+function resetDispenseUI(){
+  const circle    = document.getElementById('progressCircle');
+  const percentEl = document.getElementById('progressPercent');
+  const msgEl     = document.getElementById('progressMessage');
+
+  const C = 540.35;
+
+  if (animRAF) {
+    cancelAnimationFrame(animRAF);
+    animRAF = null;
+  }
+
+  displayedProgress = 0;
+  targetProgress = 0;
+
+  targetProgress = progress;   // ✅ target real (0-100)
+startSmoothProgress();       // ✅ anima suave hacia ese target
+  msgEl.textContent = 'Preparando…';
+}
+
+function startSmoothProgress(){
+  const circle    = document.getElementById('progressCircle');
+  const percentEl = document.getElementById('progressPercent');
+  const C = 540.35;
+
+  if (animRAF) return;
+
+  const step = () => {
+    const diff = targetProgress - displayedProgress;
+    displayedProgress += diff * 0.18; // suavidad
+
+    if (Math.abs(diff) < 0.3) displayedProgress = targetProgress;
+
+    const p = Math.max(0, Math.min(100, displayedProgress));
+    circle.style.strokeDashoffset = C - (p/100) * C;
+    percentEl.textContent = `${Math.floor(p)}%`;
+
+    if (displayedProgress !== targetProgress) {
+      animRAF = requestAnimationFrame(step);
+    } else {
+      animRAF = null;
+    }
+  };
+
+  animRAF = requestAnimationFrame(step);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 function startDispenseMonitoring(){
   const myRun = dispenseRunId;
 
