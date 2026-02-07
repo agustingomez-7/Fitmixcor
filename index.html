@@ -1230,12 +1230,14 @@ function startDispenseMonitoring(){
       // === CONDICIÓN DE FIN (como pediste) ===
       // Mostrar “Mix entregado” cuando toca FDC2:
       if (s.fdc2 === true) {
+ if (s.fdc2 === true) {
   clearInterval(statusInterval);
   statusInterval = null;
 
-  // clavar 100% real y círculo completo
-  finishFakeProgress();
-  stopMsgRotation();  
+  stopMsgRotation();
+
+  // ✅ completa a 100% prolijo aunque el fake vaya por 60%
+  await animateTo100(850);
 
   activateScreen('successFlash');
   setTimeout(() => {
@@ -1244,6 +1246,7 @@ function startDispenseMonitoring(){
   }, 2000);
   return;
 }
+
 
     } catch (e) {
       msgEl.textContent = "Sin conexión con ESP32…";
@@ -1351,6 +1354,32 @@ function stopMsgRotation(){
   }
 }
 
+function animateTo100(ms = 800){
+  stopFakeProgress(); // frena el fake para que no pise la animación final
+
+  const circle = document.getElementById('progressCircle');
+  const percentEl = document.getElementById('progressPercent');
+  const C = 540.35;
+
+  // lee el % actual que se ve en pantalla
+  const current = parseInt((percentEl?.textContent || "0").replace("%",""), 10) || 0;
+
+  const start = performance.now();
+
+  return new Promise(resolve => {
+    function step(now){
+      const t = Math.min(1, (now - start) / ms);
+      const p = Math.round(current + (100 - current) * t);
+
+      if (circle) circle.style.strokeDashoffset = C - (p/100) * C;
+      if (percentEl) percentEl.textContent = `${p}%`;
+
+      if (t < 1) requestAnimationFrame(step);
+      else resolve();
+    }
+    requestAnimationFrame(step);
+  });
+}
 
 
     </script>
