@@ -1297,17 +1297,23 @@ function startFakeProgress(durationMs){
   const percentEl = document.getElementById('progressPercent');
   const C = 540.35;
 
+  function easeInOut(t){
+    // 0..1 -> 0..1 suave y “normal”
+    return 0.5 - 0.5 * Math.cos(Math.PI * t);
+  }
+
   function frame(now){
     const elapsed = now - fakeStartMs;
     const t = Math.min(1, elapsed / durationMs); // 0..1
 
-    // sube rápido al inicio y se frena cerca del final (no llega a 100)
-    let p = 97 * (1 - Math.exp(-4 * t));
+    // ✅ Subida “tranqui” hasta 96% (no llega a 100)
+    let p = 96 * easeInOut(t);
 
-    // mini variación para que se vea “vivo”
-    p += Math.sin(elapsed / 350) * 0.6;
+    // ✅ mini vibración para que se sienta vivo, pero SIN pegar saltos
+    p += (Math.sin(elapsed / 450) * 0.4);
 
-    p = Math.max(0, Math.min(97, p));
+    // clamp
+    p = Math.max(0, Math.min(96, p));
     fakeProgress = p;
 
     if (circle) circle.style.strokeDashoffset = C - (p/100) * C;
@@ -1318,6 +1324,7 @@ function startFakeProgress(durationMs){
 
   fakeRAF = requestAnimationFrame(frame);
 }
+
 
 function startMsgRotation(){
   stopMsgRotation();
