@@ -1025,9 +1025,7 @@ function showScreen(screenName) {
   // si entro a dispensing: arranco fake %, mensajes y monitoreo FDC2
   if (screenName === 'dispensing') {
     resetFakeProgress();
-
-    const dur = (selectedWeight === 50) ? 9000 : 16000;
-    startFakeProgress(dur);
+    startFakeProgress();
 
     startMsgRotation();
     startDispenseMonitoring();
@@ -1289,7 +1287,7 @@ function finishFakeProgress(){
   if (percentEl) percentEl.textContent = '100%';
 }
 
-function startFakeProgress(durationMs){
+function startFakeProgress(){
   stopFakeProgress();
   fakeStartMs = performance.now();
 
@@ -1297,24 +1295,29 @@ function startFakeProgress(durationMs){
   const percentEl = document.getElementById('progressPercent');
   const C = 540.35;
 
-  function easeInOut(t){
-    // 0..1 -> 0..1 suave y “normal”
-    return 0.5 - 0.5 * Math.cos(Math.PI * t);
-  }
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const ease = (t)=> (1 - Math.cos(Math.PI*t))/2; // suave
 
   function frame(now){
-    const elapsed = now - fakeStartMs;
-    const t = Math.min(1, elapsed / durationMs); // 0..1
+    const e = now - fakeStartMs;
 
-    // ✅ Subida “tranqui” hasta 96% (no llega a 100)
-    let p = 96 * easeInOut(t);
+    // ✅ FASE 1: 0% -> 60% en 45s (bien tranqui)
+    const t1 = clamp(e / 45000, 0, 1);
+    const p1 = 60 * ease(t1);
 
-    // ✅ mini vibración para que se sienta vivo, pero SIN pegar saltos
-    p += (Math.sin(elapsed / 450) * 0.4);
+    // ✅ FASE 2: 60% -> 88% en 70s (lento, "procesando")
+    const t2 = clamp((e - 45000) / 70000, 0, 1);
+    const p2 = 60 + (88 - 60) * ease(t2);
 
-    // clamp
-    p = Math.max(0, Math.min(96, p));
-    fakeProgress = p;
+    // ✅ FASE 3: 88% -> 95% en 90s (muy lento, pero se mueve)
+    const t3 = clamp((e - (45000 + 70000)) / 90000, 0, 1);
+    const p3 = 88 + (95 - 88) * t3;
+
+    let p = (e <= 45000) ? p1 : (e <= 115000) ? p2 : p3;
+
+    // mini “vida” suave
+    p += Math.sin(e / 1100) * 0.12;
+    p = clamp(p, 0, 95);
 
     if (circle) circle.style.strokeDashoffset = C - (p/100) * C;
     if (percentEl) percentEl.textContent = `${Math.floor(p)}%`;
@@ -1324,6 +1327,7 @@ function startFakeProgress(durationMs){
 
   fakeRAF = requestAnimationFrame(frame);
 }
+
 
 
 function startMsgRotation(){
