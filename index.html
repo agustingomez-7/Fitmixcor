@@ -1216,42 +1216,39 @@ function startDispenseMonitoring(){
     statusInterval = null;
   }
 
-  async function tick(){
-    if (myRun !== dispenseRunId) return;
+ async function tick(){
+  if (myRun !== dispenseRunId) return;
 
-    try {
-      const r = await fetch(`${BASE_URL}/status`, { cache: "no-store" });
-      const s = await r.json();
-    
-      // Congelar datos entregados (para pantalla final)
-      deliveredWeight = selectedWeight;
-      deliveredProduct = selectedProductName;
+  try {
+    const r = await fetch(`${BASE_URL}/status`, { cache: "no-store" });
+    const s = await r.json();
 
-      // === CONDICIÓN DE FIN (como pediste) ===
-      // Mostrar “Mix entregado” cuando toca FDC2:
-      if (s.fdc2 === true) {
- if (s.fdc2 === true) {
-  clearInterval(statusInterval);
-  statusInterval = null;
+    deliveredWeight = selectedWeight;
+    deliveredProduct = selectedProductName;
 
-  stopMsgRotation();
+    // ✅ FIN: cuando toca FDC2
+    if (s.fdc2 === true) {
+      clearInterval(statusInterval);
+      statusInterval = null;
 
-  // ✅ completa a 100% prolijo aunque el fake vaya por 60%
-  await animateTo100(850);
+      stopMsgRotation();
 
-  activateScreen('successFlash');
-  setTimeout(() => {
-    if (myRun !== dispenseRunId) return;
-    showScreen('delivered');
-  }, 2000);
-  return;
-}
+      await animateTo100(850);
 
+      activateScreen('successFlash');
 
-    } catch (e) {
-      msgEl.textContent = "Sin conexión con ESP32…";
+      setTimeout(() => {
+        if (myRun !== dispenseRunId) return;
+        showScreen('delivered');
+      }, 2000);
+
+      return;
     }
+
+  } catch (e) {
+    msgEl.textContent = "Sin conexión con ESP32…";
   }
+}
 
   // primer tick inmediato
   tick();
