@@ -1226,24 +1226,24 @@ function startDispenseMonitoring(){
     deliveredWeight = selectedWeight;
     deliveredProduct = selectedProductName;
 
-    // ✅ FIN: cuando toca FDC2
-    if (s.fdc2 === true) {
-      clearInterval(statusInterval);
-      statusInterval = null;
+   // ✅ FIN: cuando el ESP32 confirma entrega
+if (s.estado === "delivered" || s.estado === "delivering") {
+  clearInterval(statusInterval);
+  statusInterval = null;
 
-      stopMsgRotation();
+  stopMsgRotation();
 
-      await animateTo100(850);
+  await animateTo100(850);
 
-      activateScreen('successFlash');
+  activateScreen('successFlash');
 
-      setTimeout(() => {
-        if (myRun !== dispenseRunId) return;
-        showScreen('delivered');
-      }, 2000);
+  setTimeout(() => {
+    if (myRun !== dispenseRunId) return;
+    showScreen('delivered');
+  }, 2000);
 
-      return;
-    }
+  return;
+}
 
   } catch (e) {
     msgEl.textContent = "Sin conexión con ESP32…";
@@ -1382,5 +1382,6 @@ function animateTo100(ms = 800){
     </script>
 </body>
 </html>
+
 
 
