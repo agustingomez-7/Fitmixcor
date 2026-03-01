@@ -901,7 +901,7 @@ body{
     </svg>
 
     <div class="progress-text">
-      <div class="progress-percent" id="progressPercent">0%</div>
+     <div class="progress-percent" id="progressPercent">0.0 g</div>
     </div>
     
 <div class="progress-message" id="progressMessage">
@@ -1222,6 +1222,9 @@ function startDispenseMonitoring(){
   try {
     const r = await fetch(`${BASE_URL}/status`, { cache: "no-store" });
     const s = await r.json();
+      
+const pesoUI = Math.max(0, Number(s.peso || 0));
+percentEl.textContent = `${pesoUI.toFixed(1)} g`;
 
     deliveredWeight = selectedWeight;
     deliveredProduct = selectedProductName;
@@ -1259,13 +1262,13 @@ function resetFakeProgress(){
   fakeProgress = 0;
 
   const circle = document.getElementById('progressCircle');
-  const percentEl = document.getElementById('progressPercent');
-  const msgEl = document.getElementById('progressMessage');
+  const textEl = document.getElementById('progressPercent');
+  const msgEl  = document.getElementById('progressMessage');
   const C = 540.35;
 
   if (circle) circle.style.strokeDashoffset = C;
-  if (percentEl) percentEl.textContent = '0%';
-  if (msgEl) msgEl.textContent = 'Preparando…';
+  if (textEl) textEl.textContent = '0.0 g';   
+  if (msgEl)  msgEl.textContent = 'Preparando…';
 }
 
 function stopFakeProgress(){
@@ -1320,8 +1323,7 @@ function startFakeProgress(){
     p = clamp(p, 0, 95);
 
     if (circle) circle.style.strokeDashoffset = C - (p/100) * C;
-    if (percentEl) percentEl.textContent = `${Math.floor(p)}%`;
-
+  
     fakeRAF = requestAnimationFrame(frame);
   }
 
@@ -1382,6 +1384,7 @@ function animateTo100(ms = 800){
     </script>
 </body>
 </html>
+
 
 
 
