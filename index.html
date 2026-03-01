@@ -1207,7 +1207,7 @@ function startDispenseMonitoring(){
 
   // reset UI
   circle.style.strokeDashoffset = C;
-  percentEl.textContent = '0%';
+percentEl.textContent = '0.0 g';
   msgEl.textContent = 'Preparando…';
 
   // si había uno viejo, lo corto
@@ -1354,24 +1354,22 @@ function stopMsgRotation(){
 }
 
 function animateTo100(ms = 800){
-  stopFakeProgress(); // frena el fake para que no pise la animación final
+  stopFakeProgress();
 
   const circle = document.getElementById('progressCircle');
-  const percentEl = document.getElementById('progressPercent');
   const C = 540.35;
 
-  // lee el % actual que se ve en pantalla
-  const current = parseInt((percentEl?.textContent || "0").replace("%",""), 10) || 0;
+  const from = parseFloat(circle?.style.strokeDashoffset || C);
+  const to = 0;
 
   const start = performance.now();
 
   return new Promise(resolve => {
     function step(now){
       const t = Math.min(1, (now - start) / ms);
-      const p = Math.round(current + (100 - current) * t);
+      const v = from + (to - from) * t;
 
-      if (circle) circle.style.strokeDashoffset = C - (p/100) * C;
-      if (percentEl) percentEl.textContent = `${p}%`;
+      if (circle) circle.style.strokeDashoffset = v;
 
       if (t < 1) requestAnimationFrame(step);
       else resolve();
@@ -1384,6 +1382,7 @@ function animateTo100(ms = 800){
     </script>
 </body>
 </html>
+
 
 
 
