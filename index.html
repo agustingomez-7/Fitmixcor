@@ -978,8 +978,7 @@ const progressMsgs = [
   "Pesando mix…",
   "Peso ok…",
   "Casi listo…",
-  "Preparando entrega…",
-  "Entregando…"
+  "Preparando entrega…"
 ];
 
 // ===== Fake progress (animación del %) =====
@@ -1223,13 +1222,25 @@ percentEl.textContent = '0.0 g';
     const r = await fetch(`${BASE_URL}/status`, { cache: "no-store" });
     const s = await r.json();
       
-const pesoUI = Math.max(0, Number(s.peso || 0));
-percentEl.textContent = `${pesoUI.toFixed(1)} g`;
+const pesoReal = Math.max(0, Number(s.peso || 0));
+const limite = (selectedWeight === 100) ? 100 : 50;
 
-    deliveredWeight = selectedWeight;
-    deliveredProduct = selectedProductName;
+// margen visual (3 gramos antes del objetivo)
+const margen = 3;
 
-   // ✅ FIN: cuando el ESP32 confirma entrega
+let pesoUI;
+
+if (pesoReal >= (limite - margen)) {
+  pesoUI = limite;  // ya lo mostramos completo
+} else {
+  pesoUI = pesoReal;
+}
+
+percentEl.textContent = (pesoUI === limite)
+  ? `${limite} g`
+  : `${pesoUI.toFixed(1)} g`;
+
+ 
 if (s.estado === "delivered" || s.estado === "delivering") {
   clearInterval(statusInterval);
   statusInterval = null;
@@ -1382,6 +1393,7 @@ function animateTo100(ms = 800){
     </script>
 </body>
 </html>
+
 
 
 
