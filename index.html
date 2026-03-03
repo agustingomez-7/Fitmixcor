@@ -1204,14 +1204,11 @@ function resetWeightSelection(){
 function startDispenseMonitoring(){
   const myRun = dispenseRunId;
 
-
   const percentEl = document.getElementById('progressPercent');
   const msgEl     = document.getElementById('progressMessage');
 
-
   // reset UI
-
-percentEl.textContent = '0.0 g';
+  percentEl.textContent = '0.0 g';
   msgEl.textContent = 'Preparando…';
 
   // si había uno viejo, lo corto
@@ -1220,93 +1217,57 @@ percentEl.textContent = '0.0 g';
     statusInterval = null;
   }
 
- async function tick(){
-  if (myRun !== dispenseRunId) return;
-
-  try {
-    const r = await fetch(`${BASE_URL}/status`, { cache: "no-store" });
-    const s = await r.json();
-      
-const pesoReal = Math.max(0, Number(s.peso || 0));
-const objetivo = (selectedWeight === 100) ? 100 : 50;
-
-let pesoUI = pesoReal;
-
-// Ventanas visuales (lo que vos pedís)
-if (objetivo === 50) {
-  if (pesoReal >= 48 && pesoReal <= 54) pesoUI = 50;
-}
-
-if (objetivo === 100) {
-  if (pesoReal >= 98 && pesoReal <= 104) pesoUI = 100;
-}
-
-// Mostrar
-percentEl.textContent = (pesoUI === objetivo)
-  ? `${objetivo} g`
-  : `${pesoUI.toFixed(1)} g`;
- 
-if (s.estado === "delivered" || s.estado === "delivering") {
-  clearInterval(statusInterval);
-  statusInterval = null;
-
-  stopMsgRotation();
-
-
-
-  activateScreen('successFlash');
-
-  setTimeout(() => {
+  async function tick(){
     if (myRun !== dispenseRunId) return;
-    showScreen('delivered');
-  }, 2000);
 
-  return;
-}
+    try {
+      const r = await fetch(`${BASE_URL}/status`, { cache: "no-store" });
+      const s = await r.json();
 
-  } catch (e) {
-    msgEl.textContent = "Sin conexión con ESP32…";
+      const pesoReal = Math.max(0, Number(s.peso || 0));
+      const objetivo = (selectedWeight === 100) ? 100 : 50;
+
+      let pesoUI = pesoReal;
+
+      // Ventanas visuales (lo que vos pedís)
+      if (objetivo === 50) {
+        if (pesoReal >= 48 && pesoReal <= 54) pesoUI = 50;
+      }
+
+      if (objetivo === 100) {
+        if (pesoReal >= 98 && pesoReal <= 104) pesoUI = 100;
+      }
+
+      // Mostrar
+      percentEl.textContent = (pesoUI === objetivo)
+        ? `${objetivo} g`
+        : `${pesoUI.toFixed(1)} g`;
+
+      if (s.estado === "delivered" || s.estado === "delivering") {
+        clearInterval(statusInterval);
+        statusInterval = null;
+
+        stopMsgRotation();
+
+        activateScreen('successFlash');
+
+        setTimeout(() => {
+          if (myRun !== dispenseRunId) return;
+          showScreen('delivered');
+        }, 2000);
+
+        return;
+      }
+
+    } catch (e) {
+      msgEl.textContent = "Sin conexión con ESP32…";
+    }
   }
-}
 
   // primer tick inmediato
   tick();
-
   statusInterval = setInterval(tick, 350);
 }
-
-
-
-
-  function frame(now){
-    const e = now - fakeStartMs;
-
-    // ✅ FASE 1: 0% -> 60% en 45s (bien tranqui)
-    const t1 = clamp(e / 45000, 0, 1);
-    const p1 = 60 * ease(t1);
-
-    // ✅ FASE 2: 60% -> 88% en 70s (lento, "procesando")
-    const t2 = clamp((e - 45000) / 70000, 0, 1);
-    const p2 = 60 + (88 - 60) * ease(t2);
-
-    // ✅ FASE 3: 88% -> 95% en 90s (muy lento, pero se mueve)
-    const t3 = clamp((e - (45000 + 70000)) / 90000, 0, 1);
-    const p3 = 88 + (95 - 88) * t3;
-
-    let p = (e <= 45000) ? p1 : (e <= 115000) ? p2 : p3;
-
-    // mini “vida” suave
-    p += Math.sin(e / 1100) * 0.12;
-    p = clamp(p, 0, 95);
-
-    if (circle) circle.style.strokeDashoffset = C - (p/100) * C;
-  
-    fakeRAF = requestAnimationFrame(frame);
-  }
-
-  fakeRAF = requestAnimationFrame(frame);
-}
-
 
 
 function startMsgRotation(){
@@ -1330,34 +1291,13 @@ function stopMsgRotation(){
   }
 }
 
-function animateTo100(ms = 800){
-  stopFakeProgress();
 
- 
-
-  const from = parseFloat(circle?.style.strokeDashoffset || C);
-  const to = 0;
-
-  const start = performance.now();
-
-  return new Promise(resolve => {
-    function step(now){
-      const t = Math.min(1, (now - start) / ms);
-      const v = from + (to - from) * t;
-
-      if (circle) circle.style.strokeDashoffset = v;
-
-      if (t < 1) requestAnimationFrame(step);
-      else resolve();
-    }
-    requestAnimationFrame(step);
-  });
-}
 
 
     </script>
 </body>
 </html>
+
 
 
 
