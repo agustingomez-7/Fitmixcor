@@ -828,7 +828,15 @@ body{
   position: static !important;  
 }
 
+.spinner-circle {
+  transform-origin: 50% 50%;
+  animation: spin 1.4s linear infinite;
+}
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
     </style>
 </head>
 <body>
@@ -889,15 +897,14 @@ body{
               fill="none"
               stroke="#eaeaea"
               stroke-width="14"/>
-
-      <circle id="progressCircle"
-              cx="100" cy="100" r="86"
-              fill="none"
-              stroke="url(#gradient)"
-              stroke-width="14"
-              stroke-linecap="round"
-              stroke-dasharray="540.35"
-              stroke-dashoffset="540.35"/>
+<circle
+        cx="100" cy="100" r="86"
+        fill="none"
+        stroke="url(#gradient)"
+        stroke-width="14"
+        stroke-linecap="round"
+        stroke-dasharray="140 400"
+        class="spinner-circle"/>
     </svg>
 
     <div class="progress-text">
@@ -1023,8 +1030,7 @@ function showScreen(screenName) {
 
   // si entro a dispensing: arranco fake %, mensajes y monitoreo FDC2
   if (screenName === 'dispensing') {
-    resetFakeProgress();
-    startFakeProgress();
+   
 
     startMsgRotation();
     startDispenseMonitoring();
@@ -1041,7 +1047,7 @@ function showScreen(screenName) {
       clearInterval(statusInterval);
       statusInterval = null;
     }
-    stopFakeProgress();
+  
     stopMsgRotation();
   }
 }
@@ -1151,7 +1157,7 @@ function anotherPurchase() {
   deliveredProduct = '';
 
  resetWeightSelection();
-resetFakeProgress();
+
 showScreen('product');
 
 }
@@ -1198,14 +1204,13 @@ function resetWeightSelection(){
 function startDispenseMonitoring(){
   const myRun = dispenseRunId;
 
-  const circle    = document.getElementById('progressCircle');
+
   const percentEl = document.getElementById('progressPercent');
   const msgEl     = document.getElementById('progressMessage');
 
-  const C = 540.35;
 
   // reset UI
-  circle.style.strokeDashoffset = C;
+
 percentEl.textContent = '0.0 g';
   msgEl.textContent = 'Preparando…';
 
@@ -1223,23 +1228,23 @@ percentEl.textContent = '0.0 g';
     const s = await r.json();
       
 const pesoReal = Math.max(0, Number(s.peso || 0));
-const limite = (selectedWeight === 100) ? 100 : 50;
+const objetivo = (selectedWeight === 100) ? 100 : 50;
 
-// margen visual (3 gramos antes del objetivo)
-const margen = 3;
+let pesoUI = pesoReal;
 
-let pesoUI;
-
-if (pesoReal >= (limite - margen)) {
-  pesoUI = limite;  // ya lo mostramos completo
-} else {
-  pesoUI = pesoReal;
+// Ventanas visuales (lo que vos pedís)
+if (objetivo === 50) {
+  if (pesoReal >= 48 && pesoReal <= 54) pesoUI = 50;
 }
 
-percentEl.textContent = (pesoUI === limite)
-  ? `${limite} g`
-  : `${pesoUI.toFixed(1)} g`;
+if (objetivo === 100) {
+  if (pesoReal >= 98 && pesoReal <= 104) pesoUI = 100;
+}
 
+// Mostrar
+percentEl.textContent = (pesoUI === objetivo)
+  ? `${objetivo} g`
+  : `${pesoUI.toFixed(1)} g`;
  
 if (s.estado === "delivered" || s.estado === "delivering") {
   clearInterval(statusInterval);
@@ -1247,7 +1252,7 @@ if (s.estado === "delivered" || s.estado === "delivering") {
 
   stopMsgRotation();
 
-  await animateTo100(850);
+
 
   activateScreen('successFlash');
 
@@ -1269,48 +1274,9 @@ if (s.estado === "delivered" || s.estado === "delivering") {
 
   statusInterval = setInterval(tick, 350);
 }
-function resetFakeProgress(){
-  fakeProgress = 0;
 
-  const circle = document.getElementById('progressCircle');
-  const textEl = document.getElementById('progressPercent');
-  const msgEl  = document.getElementById('progressMessage');
-  const C = 540.35;
 
-  if (circle) circle.style.strokeDashoffset = C;
-  if (textEl) textEl.textContent = '0.0 g';   
-  if (msgEl)  msgEl.textContent = 'Preparando…';
-}
 
-function stopFakeProgress(){
-  if (fakeRAF) {
-    cancelAnimationFrame(fakeRAF);
-    fakeRAF = null;
-  }
-}
-
-function finishFakeProgress(){
-  stopFakeProgress();
-  fakeProgress = 100;
-
-  const circle = document.getElementById('progressCircle');
-  const percentEl = document.getElementById('progressPercent');
-  const C = 540.35;
-
-  if (circle) circle.style.strokeDashoffset = 0;
-  if (percentEl) percentEl.textContent = '100%';
-}
-
-function startFakeProgress(){
-  stopFakeProgress();
-  fakeStartMs = performance.now();
-
-  const circle = document.getElementById('progressCircle');
-  const percentEl = document.getElementById('progressPercent');
-  const C = 540.35;
-
-  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
-  const ease = (t)=> (1 - Math.cos(Math.PI*t))/2; // suave
 
   function frame(now){
     const e = now - fakeStartMs;
@@ -1367,8 +1333,7 @@ function stopMsgRotation(){
 function animateTo100(ms = 800){
   stopFakeProgress();
 
-  const circle = document.getElementById('progressCircle');
-  const C = 540.35;
+ 
 
   const from = parseFloat(circle?.style.strokeDashoffset || C);
   const to = 0;
@@ -1393,6 +1358,7 @@ function animateTo100(ms = 800){
     </script>
 </body>
 </html>
+
 
 
 
